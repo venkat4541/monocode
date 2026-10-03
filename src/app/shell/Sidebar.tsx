@@ -252,6 +252,7 @@ type Props = {
     edge: PaneEdge,
   ) => void;
   onRenameSession?: (sessionId: string, title: string) => void;
+  onAutoRenameSession?: (sessionId: string) => void;
   onArchiveSession?: (sessionId: string, archived: boolean) => void;
   onArchiveSessions?: (
     sessionIds: readonly string[],
@@ -351,6 +352,7 @@ function SidebarComponent({
   onPrefetchSession: onPrefetchLocalSession,
   onPlaceSessionOnPane: onPlaceLocalSessionOnPane,
   onRenameSession: onRenameLocalSession,
+  onAutoRenameSession: onAutoRenameLocalSession,
   onArchiveSession: onArchiveLocalSession,
   onArchiveSessions: onArchiveLocalSessions,
   onPinSession: onPinLocalSession,
@@ -472,6 +474,7 @@ function SidebarComponent({
   const onRenameSession = remoteProject
     ? (sessionId: string, title: string) => { void remoteChange(sessionId, { title }); }
     : onRenameLocalSession;
+  const onAutoRenameSession = remoteProject ? undefined : onAutoRenameLocalSession;
   const onArchiveSession = remoteProject
     ? (sessionId: string, archived: boolean) => { void remoteChange(sessionId, { archived }); }
     : onArchiveLocalSession;
@@ -1097,6 +1100,15 @@ function SidebarComponent({
           },
         ]
       : []),
+    ...(!multipleMenuSessions && onAutoRenameSession
+      ? [
+          {
+            kind: "item" as const,
+            id: "auto-rename",
+            label: "Auto Rename",
+          },
+        ]
+      : []),
     ...(!multipleMenuSessions
       ? [
           {
@@ -1256,6 +1268,10 @@ function SidebarComponent({
     }
     if (id === "rename") {
       setRenamingSessionId(sessionId);
+      return;
+    }
+    if (id === "auto-rename") {
+      void onAutoRenameSession?.(sessionId);
       return;
     }
     if (id === "copy-harness-session-id" || id === "copy-monocode-session-id") {

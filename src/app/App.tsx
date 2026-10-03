@@ -4436,6 +4436,50 @@ function Workspace({
     [invalidateLoadedSession, persistSession, refreshHistory, sidebarCwd],
   );
 
+  const onAutoRenameHistorySession = useCallback(
+    async (sessionId: string) => {
+      const session =
+        sessionsRef.current.find((candidate) => candidate.id === sessionId) ??
+        (await getSession(sessionId).catch(() => null));
+      if (!session) return;
+      const message = session.blocks
+        .filter((block) => block.role === "user" && !block.draft)
+        .map((block) => block.text.trim())
+        .filter(Boolean)
+        .join("\n\n");
+      if (!message) return;
+
+      const generated = await generateHarnessTitle(session.harness, {
+        sessionId: session.id,
+        cwd: session.cwd,
+        message,
+        providerAccountId: session.providerAccountId,
+      }).catch(() => null);
+      if (!generated?.title.trim()) return;
+
+      const current =
+        sessionsRef.current.find((candidate) => candidate.id === sessionId) ??
+        session;
+      const updated = {
+        ...current,
+        title: formatSessionTitle(current.harness, generated.title),
+      };
+      if (sessionsRef.current.some((candidate) => candidate.id === sessionId)) {
+        setSessions((previous) =>
+          previous.map((candidate) =>
+            candidate.id === sessionId ? updated : candidate,
+          ),
+        );
+        loadedSessionCache.current.delete(sessionId);
+        persistSession(updated);
+      } else {
+        await upsertSession(updated).catch(() => null);
+      }
+      void refreshHistory(sidebarCwd);
+    },
+    [persistSession, refreshHistory, sidebarCwd],
+  );
+
   const checkOpenWorktreeFiles = useCallback((path: string) => {
     assertWorktreeFilesClosed(path, [
       ...filesInWorkspaceTabs(tabsRef.current),
@@ -10805,6 +10849,7 @@ function Workspace({
               onSessionNavigationOrder={onSessionNavigationOrder}
               onPlaceSessionOnPane={onPlaceSessionOnPane}
               onRenameSession={onRenameHistorySession}
+              onAutoRenameSession={onAutoRenameHistorySession}
               onArchiveSession={onArchiveHistorySession}
               onArchiveSessions={onArchiveHistorySessions}
               onPinSession={onPinHistorySession}
