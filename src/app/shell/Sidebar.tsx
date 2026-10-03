@@ -168,6 +168,7 @@ import { useProjectMenu } from "./useProjectMenu";
 import { SessionFiltersMenu } from "../../features/sessions/ui/SessionFiltersMenu";
 import { LinkSessionWorkItemDialog } from "../../features/sessions/ui/LinkSessionWorkItemDialog";
 import { sessionReminderPresets } from "../../features/sessions/ui/sessionReminderPresets";
+import { CustomReminderDialog } from "../../features/sessions/ui/CustomReminderDialog";
 import {
   formatReminderTime,
   reminderTime,
@@ -564,6 +565,9 @@ function SidebarComponent({
   const [linkingSession, setLinkingSession] = useState<SessionSummary | null>(
     null,
   );
+  const [customReminderSessionIds, setCustomReminderSessionIds] = useState<
+    readonly string[] | null
+  >(null);
   const [selectedSessionIds, setSelectedSessionIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -1247,6 +1251,12 @@ function SidebarComponent({
     closeSessionMenu();
     if (id === "reminder:cancel") {
       onCancelReminders?.(sessionIds);
+      return;
+    }
+    if (id === "reminder:custom") {
+      setReminderSessionsCollapsed(false);
+      saveReminderSessionsCollapsed(cwd, false);
+      setCustomReminderSessionIds(sessionIds);
       return;
     }
     if (id.startsWith("reminder:")) {
@@ -2161,6 +2171,16 @@ function SidebarComponent({
           filters={sessionFilters}
           onChange={onSessionFiltersChange}
           onClose={() => setFilterMenu(null)}
+        />
+      ) : null}
+      {customReminderSessionIds ? (
+        <CustomReminderDialog
+          sessionCount={customReminderSessionIds.length}
+          onSave={(dueAt) => {
+            onSetReminders?.(customReminderSessionIds, dueAt);
+            setCustomReminderSessionIds(null);
+          }}
+          onClose={() => setCustomReminderSessionIds(null)}
         />
       ) : null}
       {linkingSession ? (

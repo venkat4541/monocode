@@ -15,6 +15,13 @@ export type SessionReminder = {
 
 export type ReminderTarget = Pick<SessionReminder, "sessionId" | "dueAt">;
 
+export type ReminderUnit = "minutes" | "hours";
+
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+
+export const MAX_CUSTOM_REMINDER_MS = 365 * 24 * HOUR_MS;
+
 export function reminderTime(preset: string, now = new Date()): number | null {
   if (preset === "reminder:1h") return now.getTime() + 60 * 60 * 1000;
   if (preset === "reminder:3h") return now.getTime() + 3 * 60 * 60 * 1000;
@@ -31,6 +38,17 @@ export function reminderTime(preset: string, now = new Date()): number | null {
     return null;
   }
   return date.getTime() > now.getTime() ? date.getTime() : null;
+}
+
+export function customReminderTime(
+  amount: number,
+  unit: ReminderUnit,
+  now = new Date(),
+): number | null {
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  const delay = amount * (unit === "hours" ? HOUR_MS : MINUTE_MS);
+  if (delay < MINUTE_MS || delay > MAX_CUSTOM_REMINDER_MS) return null;
+  return now.getTime() + delay;
 }
 
 export function formatReminderTime(dueAt: number): string {

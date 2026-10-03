@@ -22,5 +22,6 @@ export function sessionReminderPresets(now = new Date()) {
     },
     { kind: "item", id: "reminder:tomorrow", label: "Tomorrow (9:00)" },
     { kind: "item", id: "reminder:next-week", label: "Next week (Mon 9:00)" },
+    { kind: "item", id: "reminder:custom", label: "Custom…" },
   ] satisfies ExplorerMenuItem[];
 }

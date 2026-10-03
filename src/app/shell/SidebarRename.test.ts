@@ -152,7 +152,9 @@ describe("project rail visibility", () => {
       onOpenProject: vi.fn(),
     };
     await act(async () => render());
-    const rail = container.querySelector<HTMLElement>('nav[aria-label="Projects"]');
+    const rail = container.querySelector<HTMLElement>(
+      'nav[aria-label="Projects"]',
+    );
     expect(rail).not.toBeNull();
     rail!.scrollTop = 37;
 
@@ -735,7 +737,9 @@ describe("sidebar new session rows", () => {
       );
     // Dev builds replay mount effects; the row must still animate, once.
     const render = () =>
-      root.render(createElement(StrictMode, null, createElement(Sidebar, props)));
+      root.render(
+        createElement(StrictMode, null, createElement(Sidebar, props)),
+      );
     act(() => render());
     expect(animate).not.toHaveBeenCalled();
 
@@ -755,9 +759,9 @@ describe("sidebar new session rows", () => {
     // The new card fades in where it lands; the row below slides down.
     expect(animated("opacity")).toHaveLength(1);
     expect(
-      animated("opacity")[0].closest("li")?.querySelector(
-        '[data-session-card="session-2"]',
-      ),
+      animated("opacity")[0]
+        .closest("li")
+        ?.querySelector('[data-session-card="session-2"]'),
     ).not.toBeNull();
     expect(animated("transform")).toHaveLength(1);
     expect(
@@ -1322,6 +1326,63 @@ describe("sidebar session reminders", () => {
     expect(document.querySelector('[role="menu"]')).toBeNull();
   });
 
+  it("schedules a custom duration for the selected sessions", () => {
+    props.onSetReminders = vi.fn();
+    act(() => render());
+    const submenu = openReminderMenu();
+    const custom = Array.from(
+      submenu.querySelectorAll<HTMLButtonElement>("button"),
+    ).find((item) => item.textContent === "Custom…")!;
+    act(() => custom.click());
+
+    expect(document.querySelector('[role="menu"]')).toBeNull();
+    const dialog = document.querySelector('[role="dialog"]')!;
+    expect(dialog.textContent).toContain("Remind me in");
+    const amount = dialog.querySelector<HTMLInputElement>(
+      "input[type='number']",
+    )!;
+    typeTitle(amount, "90");
+    const before = Date.now();
+    act(() =>
+      Array.from(dialog.querySelectorAll<HTMLButtonElement>("button"))
+        .find((item) => item.textContent === "Set reminder")!
+        .click(),
+    );
+
+    const [ids, dueAt] = vi.mocked(props.onSetReminders).mock.calls[0];
+    expect(ids).toEqual(["session-1"]);
+    expect(dueAt).toBeGreaterThanOrEqual(before + 90 * 60_000);
+    expect(dueAt).toBeLessThanOrEqual(Date.now() + 90 * 60_000);
+    expect(document.querySelector('[role="dialog"]')).toBeNull();
+  });
+
+  it("keeps the custom dialog open when the amount is unusable", () => {
+    props.onSetReminders = vi.fn();
+    act(() => render());
+    const submenu = openReminderMenu();
+    act(() =>
+      Array.from(submenu.querySelectorAll<HTMLButtonElement>("button"))
+        .find((item) => item.textContent === "Custom…")!
+        .click(),
+    );
+    const dialog = document.querySelector('[role="dialog"]')!;
+    typeTitle(
+      dialog.querySelector<HTMLInputElement>("input[type='number']")!,
+      "",
+    );
+    act(() =>
+      Array.from(dialog.querySelectorAll<HTMLButtonElement>("button"))
+        .find((item) => item.textContent === "Set reminder")!
+        .click(),
+    );
+
+    expect(props.onSetReminders).not.toHaveBeenCalled();
+    expect(document.querySelector('[role="dialog"]')).not.toBeNull();
+    expect(dialog.querySelector("[role='alert']")!.textContent).toBe(
+      "Enter how many minutes or hours from now.",
+    );
+  });
+
   it("groups reminders first without a card clock and offers cancellation first", () => {
     props.onSetReminders = vi.fn();
     props.onCancelReminders = vi.fn();
@@ -1643,7 +1704,9 @@ describe("collapsed rail Inbox actions", () => {
 
       act(() =>
         container
-          .querySelector<HTMLButtonElement>('button[aria-label^="Switch project"]')!
+          .querySelector<HTMLButtonElement>(
+            'button[aria-label^="Switch project"]',
+          )!
           .click(),
       );
       const row = document.querySelector<HTMLButtonElement>(
@@ -1685,7 +1748,9 @@ describe("collapsed rail Inbox actions", () => {
 
     act(() =>
       container
-        .querySelector<HTMLButtonElement>('button[aria-label^="Switch project"]')!
+        .querySelector<HTMLButtonElement>(
+          'button[aria-label^="Switch project"]',
+        )!
         .click(),
     );
     pressKey(projectSearchInput()!, "ArrowDown");
@@ -1713,7 +1778,9 @@ describe("collapsed rail Inbox actions", () => {
 
     act(() =>
       container
-        .querySelector<HTMLButtonElement>('button[aria-label^="Switch project"]')!
+        .querySelector<HTMLButtonElement>(
+          'button[aria-label^="Switch project"]',
+        )!
         .click(),
     );
     const row = document.querySelector<HTMLButtonElement>(
@@ -1745,11 +1812,15 @@ describe("collapsed rail Inbox actions", () => {
 
     act(() =>
       container
-        .querySelector<HTMLButtonElement>('button[aria-label^="Switch project"]')!
+        .querySelector<HTMLButtonElement>(
+          'button[aria-label^="Switch project"]',
+        )!
         .click(),
     );
     const row = () =>
-      document.querySelector<HTMLButtonElement>('button[title="/workspace/other"]')!;
+      document.querySelector<HTMLButtonElement>(
+        'button[title="/workspace/other"]',
+      )!;
     await act(async () => {
       row().dispatchEvent(
         new MouseEvent("contextmenu", { bubbles: true, cancelable: true }),

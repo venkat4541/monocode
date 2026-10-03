@@ -15,6 +15,7 @@ import {
 import { ExplorerMenu } from "../../files/ui/ExplorerMenu";
 import { Clock } from "../../../shared/ui/icons";
 import { sessionReminderPresets } from "./sessionReminderPresets";
+import { CustomReminderDialog } from "./CustomReminderDialog";
 
 function subscribeNotifications(callback: () => void) {
   window.addEventListener(NOTIFICATIONS_CHANGE_EVENT, callback);
@@ -50,6 +51,9 @@ export function ReminderNotices({
     x: number;
     y: number;
   } | null>(null);
+  const [customSnooze, setCustomSnooze] = useState<SessionReminder | null>(
+    null,
+  );
   const notifications = useSyncExternalStore(
     subscribeNotifications,
     loadNotificationsEnabled,
@@ -166,10 +170,30 @@ export function ReminderNotices({
           ariaLabel="Snooze reminder"
           onClose={() => setSnooze(null)}
           onPick={(id) => {
-            const dueAt = reminderTime(id);
-            if (dueAt != null) onSnooze([snooze.reminder.sessionId], dueAt);
+            const sessionId = snooze.reminder.sessionId;
             setSnooze(null);
+            if (id === "reminder:custom") {
+              setCustomSnooze(snooze.reminder);
+              return;
+            }
+            const dueAt = reminderTime(id);
+            if (dueAt != null) onSnooze([sessionId], dueAt);
           }}
+        />
+      ) : null}
+      {customSnooze &&
+      reminders.some(
+        (reminder) =>
+          reminder.sessionId === customSnooze.sessionId &&
+          reminder.dueAt === customSnooze.dueAt,
+      ) ? (
+        <CustomReminderDialog
+          sessionCount={1}
+          onSave={(dueAt) => {
+            onSnooze([customSnooze.sessionId], dueAt);
+            setCustomSnooze(null);
+          }}
+          onClose={() => setCustomSnooze(null)}
         />
       ) : null}
     </>,
